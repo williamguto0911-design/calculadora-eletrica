@@ -58,17 +58,12 @@ function renumberCircuits() {
         block.dataset.id = newId;
         block.id = `circuit-${newId}`;
         block.querySelectorAll('[id],[for],[data-circuit-id]').forEach(el => {
-            for (const prop of ['id', 'htmlFor', 'dataset.circuitId']) {
-                const value = prop === 'dataset.circuitId' ? el.dataset.circuitId : el[prop];
-                if (value && String(value).includes(`-${oldId}`)) {
-                    const newValue = value.replace(`-${oldId}`, `-${newId}`);
-                    if (prop === 'dataset.circuitId') {
-                        el.dataset.circuitId = newValue;
-                    } else {
-                        el[prop] = newValue;
-                    }
+            const props=['id','htmlFor','data-circuit-id'];
+            props.forEach(prop=>{
+                if(el[prop] && String(el[prop]).includes(`-${oldId}`)){
+                    el[prop] = el[prop].replace(`-${oldId}`,`-${newId}`)
                 }
-            }
+            })
         });
         block.querySelector('h2').textContent = `Circuito ${newId}`;
     });
@@ -102,8 +97,8 @@ function initializeCircuitListeners(id) {
     atualizarLigacoes();
 }
 
-function getCircuitHTML(id) {
-    return `<div class="circuit-block" id="circuit-${id}" data-id="${id}"><div class="circuit-header"><h2 id="circuit-title-${id}">Circuito ${id}</h2>${id > 1 ? `<button type="button" class="remove-btn" data-circuit-id="${id}">Remover</button>` : ''}</div><div class="form-grid"><div class="form-group"><label for="nomeCircuito-${id}">Nome do Circuito</label><input type="text" id="nomeCircuito-${id}" value="Circuito ${id}"></div><div class="form-group"><label for="tipoCircuito-${id}">Tipo de Circuito</label><select id="tipoCircuito-${id}"><option value="alimentacao_geral">Alimentacao Geral</option><option value="iluminacao">Iluminacao</option><option value="tug" selected>Tomadas de Uso Geral (TUG)</option><option value="tue">Tomadas de Uso Especifico (TUE)</option><option value="aquecimento">Aquecimento</option><option value="motores">Circuito de Motores</option><option value="ar_condicionado">Ar Condicionado</option></select></div><div class="form-group" id="potenciaW_group-${id}"><label for="potenciaW-${id}">Potencia (W)</label><input type="number" id="potenciaW-${id}" value="2500"></div><div class="form-group hidden" id="potenciaCV_group-${id}"><label for="potenciaCV-${id}">Potencia do Motor (CV)</label><select id="potenciaCV-${id}"><option value="0.25">1/4</option><option value="0.5">1/2</option><option value="1">1</option><option value="2">2</option><option value="5">5</option><option value="10">10</option></select></div><div class="form-group"><label for="fatorDemanda-${id}">Fator de Demanda</label><select id="fatorDemanda-${id}"><option value="1" selected>1.00</option><option value="0.9">0.90</option><option value="0.8">0.80</option><option value="0.7">0.70</option></select></div><div class="form-group"><label for="fases-${id}">Sistema de Fases</label><select id="fases-${id}"><option value="Monofasico" selected>Monofasico</option><option value="Bifasico">Bifasico</option><option value="Trifasico">Trifasico</option></select></div><div class="form-group"><label for="tipoLigacao-${id}">Tipo de Ligacao</label><select id="tipoLigacao-${id}"></select></div><div class="form-group"><label for="tensaoV-${id}">Tensao (V)</label><select id="tensaoV-${id}"><option value="127">127 V</option><option value="220" selected>220 V</option><option value="380">380 V</option></select></div><div class="form-group"><label for="fatorPotencia-${id}">Fator de Potencia</label><input type="number" id="fatorPotencia-${id}" step="0.01" value="0.92"></div><div class="form-group"><label for="comprimentoM-${id}">Comprimento (m)</label><input type="number" id="comprimentoM-${id}" value="20"></div><div class="form-group"><label for="tipoIsolacao-${id}">Tipo de Isolacao</label><select id="tipoIsolacao-${id}"><option value="PVC" selected>PVC 70 C</option><option value="EPR">EPR/XLPE 90 C</option></select></div><div class="form-group"><label for="materialCabo-${id}">Material do Condutor</label><select id="materialCabo-${id}"><option value="Cobre" selected>Cobre</option><option value="Aluminio">Aluminio</option></select></div><div class="form-group"><label for="metodoInstalacao-${id}">Metodo de Instalacao</label><select id="metodoInstalacao-${id}"><option value="A1">A1</option><option value="A2">A2</option><option value="B1" selected>B1</option><option value="B2">B2</option><option value="C">C</option><option value="D">D</option></select></div><div class="form-group"><label for="temperaturaAmbienteC-${id}">Temp. Ambiente (C)</label><select id="temperaturaAmbienteC-${id}"><option value="30" selected>30</option><option value="40">40</option><option value="50">50</option></select></div><div class="form-group"><label for="resistividadeSolo-${id}">Resist. Solo (C.m/W)</label><select id="resistividadeSolo-${id}"><option value="0" selected>N/A</option><option value="2.5">2.5</option></select></div><div class="form-group"><label for="numCircuitosAgrupados-${id}">N Circuitos Agrupados</label><input type="number" id="numCircuitosAgrupados-${id}" value="1"></div><div class="form-group"><label for="limiteQuedaTensao-${id}">Limite Queda de Tensao (%)</label><input type="number" id="limiteQuedaTensao-${id}" step="0.1" value="4.0"></div><div class="form-group"><label for="tipoDisjuntor-${id}">Tipo de Disjuntor</label><select id="tipoDisjuntor-${id}"><option>Minidisjuntor (DIN)</option><option>Caixa Moldada (MCCB)</option></select></div><div class="form-group"><label for="classeDPS-${id}">Protecao DPS</label><select id="classeDPS-${id}"><option>Nenhuma</option><option>Classe I</option><option>Classe II</option><option>Classe III</option></select><div class="checkbox-group"><input type="checkbox" id="requerDR-${id}"><label for="requerDR-${id}">Requer DR</label></div></div></div></div>`;
+function getCircuitHTML(id){
+    return `<div class="circuit-block" id="circuit-${id}" data-id="${id}"><div class="circuit-header"><h2 id="circuit-title-${id}">Circuito ${id}</h2>${id>1?`<button type="button" class="remove-btn" data-circuit-id="${id}">Remover</button>`:''}</div><div class="form-grid"><div class="form-group"><label for="nomeCircuito-${id}">Nome do Circuito</label><input type="text" id="nomeCircuito-${id}" value="Circuito ${id}"></div><div class="form-group"><label for="tipoCircuito-${id}">Tipo de Circuito</label><select id="tipoCircuito-${id}"><option value="alimentacao_geral">Alimentacao Geral</option><option value="iluminacao">Iluminacao</option><option value="tug" selected>Tomadas de Uso Geral (TUG)</option><option value="tue">Tomadas de Uso Especifico (TUE)</option><option value="aquecimento">Aquecimento</option><option value="motores">Circuito de Motores</option><option value="ar_condicionado">Ar Condicionado</option></select></div><div class="form-group" id="potenciaW_group-${id}"><label for="potenciaW-${id}">Potencia (W)</label><input type="number" id="potenciaW-${id}" value="2500"></div><div class="form-group hidden" id="potenciaCV_group-${id}"><label for="potenciaCV-${id}">Potencia do Motor (CV)</label><select id="potenciaCV-${id}"><option value="0.25">1/4</option><option value="0.33">1/3</option><option value="0.5">1/2</option><option value="0.75">3/4</option><option value="1">1</option><option value="1.5">1 1/2</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="7.5">7 1/2</option><option value="10">10</option><option value="12.5">12 1/2</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option></select></div><div class="form-group"><label for="fatorDemanda-${id}">Fator de Demanda</label><select id="fatorDemanda-${id}"><option value="0.50">0.50</option><option value="0.55">0.55</option><option value="0.60">0.60</option><option value="0.65">0.65</option><option value="0.70">0.70</option><option value="0.75">0.75</option><option value="0.80">0.80</option><option value="0.85">0.85</option><option value="0.90">0.90</option><option value="0.92">0.92</option><option value="0.95">0.95</option><option value="1" selected>1.00</option><option value="1.10">1.10</option><option value="1.15">1.15</option><option value="1.20">1.20</option><option value="1.25">1.25</option><option value="1.30">1.30</option></select></div><div class="form-group"><label for="fases-${id}">Sistema de Fases</label><select id="fases-${id}"><option value="Monofasico" selected>Monofasico</option><option value="Bifasico">Bifasico</option><option value="Trifasico">Trifasico</option></select></div><div class="form-group"><label for="tipoLigacao-${id}">Tipo de Ligacao</label><select id="tipoLigacao-${id}"></select></div><div class="form-group"><label for="tensaoV-${id}">Tensao (V)</label><select id="tensaoV-${id}"><option value="12">12 V</option><option value="24">24 V</option><option value="36">36 V</option><option value="127">127 V</option><option value="220" selected>220 V</option><option value="380">380 V</option><option value="440">440 V</option><option value="760">760 V</option></select></div><div class="form-group"><label for="fatorPotencia-${id}">Fator de Potencia (eficiencia)</label><input type="number" id="fatorPotencia-${id}" step="0.01" value="0.92"></div><div class="form-group"><label for="comprimentoM-${id}">Comprimento (m)</label><input type="number" id="comprimentoM-${id}" value="20"></div><div class="form-group"><label for="tipoIsolacao-${id}">Tipo de Isolacao</label><select id="tipoIsolacao-${id}"><option value="PVC" selected>PVC 70 C</option><option value="EPR">EPR/XLPE 90 C</option></select></div><div class="form-group"><label for="materialCabo-${id}">Material do Condutor</label><select id="materialCabo-${id}"><option value="Cobre" selected>Cobre</option><option value="Aluminio">Aluminio</option></select></div><div class="form-group"><label for="metodoInstalacao-${id}">Metodo de Instalacao</label><select id="metodoInstalacao-${id}"><option value="A1">A1</option><option value="A2">A2</option><option value="B1" selected>B1</option><option value="B2">B2</option><option value="C">C</option><option value="D">D</option></select></div><div class="form-group"><label for="temperaturaAmbienteC-${id}">Temperatura Ambiente (C)</label><select id="temperaturaAmbienteC-${id}"><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30" selected>30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option></select></div><div class="form-group"><label for="resistividadeSolo-${id}">Resistividade T. do Solo (C.m/W)</label><select id="resistividadeSolo-${id}"><option value="0" selected>Nao Aplicavel</option><option value="0.7">0.7</option><option value="0.8">0.8</option><option value="1.0">1.0</option><option value="1.5">1.5</option><option value="2.0">2.0</option><option value="2.5">2.5</option><option value="3.0">3.0</option></select></div><div class="form-group"><label for="numCircuitosAgrupados-${id}">N de Circuitos Agrupados</label><input type="number" id="numCircuitosAgrupados-${id}" value="1"></div><div class="form-group"><label for="limiteQuedaTensao-${id}">Limite Queda de Tensao (%)</label><input type="number" id="limiteQuedaTensao-${id}" step="0.1" value="4.0"></div><div class="form-group"><label for="tipoDisjuntor-${id}">Tipo de Disjuntor</label><select id="tipoDisjuntor-${id}"><option value="Minidisjuntor (DIN)">Minidisjuntor (DIN)</option><option value="Caixa Moldada (MCCB)">Caixa Moldada (MCCB)</option></select></div><div class="form-group"><label for="classeDPS-${id}">Protecao DPS</label><select id="classeDPS-${id}"><option value="Nenhum">Nenhuma</option><option value="Classe I">Classe I</option><option value="Classe II">Classe II</option><option value="Classe III">Classe III</option></select><div class="checkbox-group"><input type="checkbox" id="requerDR-${id}"><label for="requerDR-${id}">Requer Protecao DR</label></div></div></div></div>`;
 }
 
 // --- PREENCHIMENTO DE DADOS ---
@@ -114,7 +109,6 @@ export function populateProjectList(projects, isAdmin) {
         const option = document.createElement('option');
         option.value = project.id;
         let text = project.project_name;
-        // CORREÇÃO APLICADA AQUI TAMBÉM PARA CONSISTÊNCIA
         if (isAdmin && project.profile) {
             text += ` (${project.profile.nome})`;
         }
@@ -190,8 +184,6 @@ export function populateProjectsPanel_Admin(projects, users) {
         const row = document.createElement('tr');
         const userOptions = users.map(user => `<option value="${user.id}" ${user.id === project.owner_id ? 'selected' : ''}>${user.nome}</option>`).join('');
         
-        // **** A CORREÇÃO ESTÁ NA LINHA ABAIXO ****
-        // Trocamos 'project.profiles?.nome' por 'project.profile?.nome' (singular)
         row.innerHTML = `
             <td>${project.project_name}</td>
             <td>${project.profile?.nome || 'Desconhecido'}</td>
@@ -204,7 +196,144 @@ export function populateProjectsPanel_Admin(projects, users) {
 }
 
 // --- RELATÓRIOS E PDF ---
-export function renderReport(results) {
-    // Esta função é uma versão simplificada da sua original para este arquivo
-    // A lógica completa de formatação do texto pode ser adicionada aqui
-    document.getElementById('report').textContent = JSON.stringify(
+export function renderReport(allResults){
+    if(!allResults || allResults.length === 0) return;
+    const dataHora = (new Date).toLocaleString('pt-BR');
+    const formatLine = (label, value) => (label + ':').padEnd(28, ' ') + value;
+    let reportText = `======================================================\n==           RELATORIO DE PROJETO ELETRICO           ==\n======================================================\n${formatLine('Gerado em', dataHora)}\n`;
+    const dadosCliente = allResults[0].dados;
+    reportText += `\n-- DADOS DA OBRA E CLIENTE --\n`;
+    reportText += `${formatLine('Cliente', dadosCliente.cliente || 'Nao informado')}\n`;
+    reportText += `${formatLine(`Documento (${dadosCliente.tipoDocumento})`, dadosCliente.documento || 'Nao informado')}\n`;
+    reportText += `${formatLine('Contato', dadosCliente.celular || dadosCliente.telefone || 'Nao informado')}\n`;
+    reportText += `${formatLine('E-mail', dadosCliente.email || 'Nao informado')}\n`;
+    reportText += `${formatLine('Obra', dadosCliente.obra || 'Nao informado')}\n`;
+    reportText += `${formatLine('Endereco', dadosCliente.endereco || 'Nao informado')}\n`;
+    reportText += `${formatLine('Area da Obra', (dadosCliente.areaObra || 'Nao informado') + ' m2')}\n`;
+    const respTecnico = document.getElementById('respTecnico').value;
+    const titulo = document.getElementById('titulo').value;
+    const crea = document.getElementById('crea').value;
+    if (respTecnico || titulo || crea) {
+        reportText += `\n-- RESPONSAVEL TECNICO --\n`;
+        reportText += `${formatLine('Nome', respTecnico || 'Nao informado')}\n`;
+        reportText += `${formatLine('Titulo', titulo || 'Nao informado')}\n`;
+        reportText += `${formatLine('CREA', crea || 'Nao informado')}\n`;
+    }
+    reportText += `\n-- QUADRO DE CARGAS RESUMIDO --\n`;
+    allResults.forEach(result => {
+        reportText += `${formatLine(`Circuito ${result.dados.id}`, `${result.dados.nomeCircuito} - ${result.calculos.potenciaDemandada.toFixed(2)} W`)}\n`;
+    });
+    allResults.forEach(result => {
+        const { dados, calculos } = result;
+        reportText += `\n\n======================================================\n==           MEMORIAL DE CALCULO - CIRCUITO ${dados.id}           ==\n======================================================\n`;
+        reportText += `\n-- IDENTIFICACAO DO CIRCUITO --\n`;
+        reportText += `${formatLine('Nome do Circuito', dados.nomeCircuito)}\n`;
+        reportText += `${formatLine('Tipo de Circuito', dados.tipoCircuito.replace(/_/g, ' '))}\n`;
+        reportText += `\n-- CARGA E DEMANDA --\n`;
+        reportText += `${formatLine('Potencia Instalada', `${calculos.potenciaInstalada.toFixed(2)} W`)}\n`;
+        reportText += `${formatLine('Corrente Instalada', `${calculos.correnteInstalada.toFixed(2)} A`)}\n`;
+        reportText += `${formatLine('Fator de Demanda Aplicado', dados.fatorDemanda)}\n`;
+        reportText += `${formatLine('Potencia Demandada', `${calculos.potenciaDemandada.toFixed(2)} W`)}\n`;
+        reportText += `${formatLine('Corrente Demandada (Ib)', `${calculos.correnteDemandada.toFixed(2)} A`)}\n`;
+        reportText += `\n-- ESPECIFICACOES DO CABO E CORRECOES --\n`;
+        reportText += `${formatLine('Material / Isolacao', `${dados.materialCabo} / ${dados.tipoIsolacao}`)}\n`;
+        reportText += `${formatLine('Metodo de Instalacao', dados.metodoInstalacao)}\n`;
+        reportText += `${formatLine('Fatores de Correcao', `K1=${calculos.fatorK1.toFixed(2)}, K2=${calculos.fatorK2.toFixed(2)}, K3=${calculos.fatorK3.toFixed(2)}`)}\n`;
+        reportText += `${formatLine('Corrente p/ Dimensionar', `${calculos.correnteCorrigidaA.toFixed(2)} A`)}\n`;
+        reportText += `\n-- RESULTADOS DE DIMENSIONAMENTO --\n`;
+        reportText += `${formatLine('Bitola Recomendada', `${calculos.bitolaRecomendadaMm2} mm2`)}\n`;
+        reportText += `${formatLine('Resistencia do Cabo', `${calculos.resistenciaCabo.toFixed(4)} Ohm`)}\n`;
+        reportText += `${formatLine('Queda de Tensao (DV)', `${calculos.quedaTensaoCalculada.toFixed(2)} %`)}\n`;
+        reportText += `${formatLine('Limite de Queda de Tensao', `${dados.limiteQuedaTensao.toFixed(2)} %`)}\n`;
+        reportText += `${formatLine('Corrente Max. Cabo (Iz)', `${calculos.correnteMaximaCabo.toFixed(2)} A`)}\n`;
+        reportText += `${formatLine('Potencia Max. Cabo', `${calculos.potenciaMaximaCabo.toFixed(2)} W`)}\n`;
+        reportText += `\n-- PROTECOES RECOMENDADAS --\n`;
+        reportText += `${formatLine(`Disjuntor (${dados.tipoDisjuntor})`, `${calculos.disjuntorRecomendado.nome} (Icc: ${calculos.disjuntorRecomendado.icc} kA)`)}\n`;
+        reportText += `${formatLine('Protecao DR 30mA', dados.requerDR ? `Sim (usar ${calculos.disjuntorRecomendado.nome.replace('A','')}A / 30mA)` : 'Nao')}\n`;
+        reportText += `${formatLine('Protecao DPS', dados.classeDPS !== 'Nenhum' ? `Sim, ${dados.classeDPS} (ex: 20kA)` : 'Nao')}\n`;
+        reportText += `${formatLine('Eletroduto (aprox.)', `${calculos.dutoRecomendado} (${calculos.numCondutores} condutores)`)}\n`;
+    });
+    document.getElementById('report').textContent = reportText.trim();
+}
+
+export function generatePdf(allResults, currentUserProfile) {
+    if (!allResults) return;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let yPos = 15;
+    doc.setFont('Roboto', 'normal');
+    const addText = (text, indent = 10) => {
+        if (yPos > 280) { doc.addPage(); yPos = 15; }
+        doc.text(text, indent, yPos);
+        yPos += 5;
+    };
+    doc.setFontSize(10);
+    const formatLine = (label, value) => (label + ':').padEnd(20, ' ') + (value || 'Nao informado');
+    doc.setFont('Roboto', 'bold');
+    doc.setFontSize(16);
+    doc.text("Relatorio de Projeto Eletrico", 105, yPos, { align: 'center' });
+    yPos += 10;
+    const dadosCliente = allResults[0].dados;
+    doc.setFont('Roboto', 'bold'); addText("-- DADOS DA OBRA E CLIENTE --");
+    doc.setFont('Roboto', 'normal');
+    addText(formatLine('Cliente', dadosCliente.cliente));
+    addText(formatLine(`Documento`, `${dadosCliente.tipoDocumento} - ${dadosCliente.documento}`));
+    addText(formatLine('Contato', dadosCliente.celular || dadosCliente.telefone));
+    addText(formatLine('E-mail', dadosCliente.email));
+    addText(formatLine('Obra', dadosCliente.obra));
+    addText(formatLine('Endereco', dadosCliente.endereco));
+    addText(formatLine('Area da Obra', `${dadosCliente.areaObra || 'N/A'} m2`));
+    yPos += 5;
+    const respTecnico = document.getElementById('respTecnico').value;
+    const titulo = document.getElementById('titulo').value;
+    const crea = document.getElementById('crea').value;
+    if (respTecnico || titulo || crea) {
+        doc.setFont('Roboto', 'bold'); addText("-- RESPONSAVEL TECNICO --");
+        doc.setFont('Roboto', 'normal');
+        addText(formatLine('Nome', respTecnico));
+        addText(formatLine('Titulo', titulo));
+        addText(formatLine('CREA', crea));
+        yPos += 5;
+    }
+    const generatingUserName = currentUserProfile?.nome || 'Usuário';
+    doc.setFont('Roboto', 'bold'); addText("-- INFORMACOES DO RELATORIO --");
+    doc.setFont('Roboto', 'normal');
+    addText(formatLine('Gerado em', (new Date).toLocaleString('pt-BR')));
+    addText(formatLine('Gerado por', generatingUserName));
+    yPos += 5;
+    const head = [['Ckt', 'Nome', 'Pot.(W)', 'Tensao(V)', 'Fases', 'Cabo', 'Disjuntor', 'DR', 'DPS']];
+    const body = allResults.map(r => [
+        r.dados.id,
+        r.dados.nomeCircuito,
+        r.calculos.potenciaDemandada.toFixed(2),
+        r.dados.tensaoV,
+        r.dados.fases,
+        r.calculos.bitolaRecomendadaMm2 + 'mm2',
+        r.calculos.disjuntorRecomendado.nome,
+        r.dados.requerDR ? 'Sim' : 'Nao',
+        r.dados.classeDPS
+    ]);
+    doc.autoTable({ startY: yPos, head: head, body: body, theme: 'grid', styles: { font: "Roboto", fontSize: 8 } });
+    allResults.forEach(result => {
+        doc.addPage();
+        yPos = 15;
+        const { dados, calculos } = result;
+        doc.setFont('Roboto', 'bold');
+        doc.setFontSize(12);
+        doc.text(`MEMORIAL DE CALCULO - CIRCUITO ${dados.id}: ${dados.nomeCircuito}`, 10, yPos);
+        yPos += 10;
+        const addSection = (title, lines) => {
+            doc.setFont('Roboto', 'bold');
+            doc.setFontSize(10);
+            addText(title);
+            doc.setFont('Roboto', 'normal');
+            lines.forEach(line => addText(line, 15));
+        };
+        addSection("-- CARGA E DEMANDA --", [`Potencia Instalada: ${calculos.potenciaInstalada.toFixed(2)} W`, `Corrente Instalada: ${calculos.correnteInstalada.toFixed(2)} A`, `Fator de Demanda: ${dados.fatorDemanda}`, `Potencia Demandada: ${calculos.potenciaDemandada.toFixed(2)} W`, `Corrente Demandada (Ib): ${calculos.correnteDemandada.toFixed(2)} A`]);
+        yPos += 3;
+        addSection("-- DIMENSIONAMENTO DO CABO --", [`Material / Isolacao: ${dados.materialCabo} / ${dados.tipoIsolacao}`, `Metodo de Instalacao: ${dados.metodoInstalacao}`, `Fatores de Correcao (K): K1=${calculos.fatorK1.toFixed(2)}, K2=${calculos.fatorK2.toFixed(2)}, K3=${calculos.fatorK3.toFixed(2)}`, `Corrente Corrigida (I'): ${calculos.correnteCorrigidaA.toFixed(2)} A`, `Bitola Recomendada: ${calculos.bitolaRecomendadaMm2} mm2`, `Queda de Tensao (DV): ${calculos.quedaTensaoCalculada.toFixed(2)} % (Limite: ${dados.limiteQuedaTensao.toFixed(2)} %)`]);
+        yPos += 3;
+        addSection("-- PROTECOES RECOMENDADAS --", [`Disjuntor (${dados.tipoDisjuntor}): ${calculos.disjuntorRecomendado.nome} (Icc: ${calculos.disjuntorRecomendado.icc} kA)`, `Corrente Max. Cabo (Iz): ${calculos.correnteMaximaCabo.toFixed(2)} A`, `Protecao DR 30mA: ${dados.requerDR ? 'Sim' : 'Nao'}`, `Protecao DPS: ${dados.classeDPS !== 'Nenhum' ? 'Sim, ' + dados.classeDPS : 'Nao'}`, `Eletroduto (aprox.): ${calculos.dutoRecomendado} (${calculos.numCondutores} condutores)`]);
+    });
+    doc.save(`Relatorio_${document.getElementById('obra').value || 'Projeto'}.pdf`);
+}
