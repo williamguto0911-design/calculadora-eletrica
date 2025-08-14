@@ -391,6 +391,98 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
   }
 });
 </script>
+<h2>Cadastro de Cliente</h2>
+<form id="clienteForm">
+  <select id="clienteUsuario">
+    <option value="">Selecione Usuário</option>
+  </select>
+  <input type="text" id="clienteCpf" placeholder="CPF" required />
+  <input type="text" id="clienteTelefone" placeholder="Telefone" required />
+  <input type="text" id="clienteEndereco" placeholder="Endereço" required />
+  <button type="submit">Cadastrar Cliente</button>
+</form>
+
+<h2>Cadastro de Projeto</h2>
+<form id="projetoForm">
+  <select id="projetoCliente">
+    <option value="">Selecione Cliente</option>
+  </select>
+  <input type="text" id="projetoTitulo" placeholder="Título" required />
+  <input type="text" id="projetoDescricao" placeholder="Descrição" />
+  <button type="submit">Cadastrar Projeto</button>
+</form>
+
+<h2>Listagem de Clientes e Projetos</h2>
+<div id="listaClientes"></div>
+<div id="listaProjetos"></div>
+
+<script>
+  // Função para carregar usuários no select de clientes
+  async function carregarUsuarios() {
+    const { data: usuarios, error } = await supabaseClient.from("usuarios").select("*");
+    if (error) return console.log(error);
+    const select = document.getElementById("clienteUsuario");
+    select.innerHTML = '<option value="">Selecione Usuário</option>';
+    usuarios.forEach(u => select.innerHTML += `<option value="${u.id}">${u.nome}</option>`);
+  }
+
+  // Função para carregar clientes no select de projetos
+  async function carregarClientes() {
+    const { data: clientes, error } = await supabaseClient.from("clientes").select("*");
+    if (error) return console.log(error);
+    const select = document.getElementById("projetoCliente");
+    select.innerHTML = '<option value="">Selecione Cliente</option>';
+    clientes.forEach(c => select.innerHTML += `<option value="${c.id}">${c.cpf} - ${c.telefone}</option>`);
+  }
+
+  // Listagem de clientes e projetos
+  async function listarClientesProjetos() {
+    const { data: clientes, error: errC } = await supabaseClient.from("clientes").select("*");
+    const { data: projetos, error: errP } = await supabaseClient.from("projetos").select("*");
+    if (errC || errP) return console.log(errC || errP);
+    document.getElementById("listaClientes").innerHTML = '<h3>Clientes:</h3>' + JSON.stringify(clientes, null, 2);
+    document.getElementById("listaProjetos").innerHTML = '<h3>Projetos:</h3>' + JSON.stringify(projetos, null, 2);
+  }
+
+  // Cadastro de Cliente
+  document.getElementById("clienteForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const usuario_id = document.getElementById("clienteUsuario").value;
+    const cpf = document.getElementById("clienteCpf").value;
+    const telefone = document.getElementById("clienteTelefone").value;
+    const endereco = document.getElementById("clienteEndereco").value;
+
+    const { error } = await supabaseClient.from("clientes").insert([{ usuario_id, cpf, telefone, endereco }]);
+    if (error) alert("Erro: " + error.message);
+    else {
+      alert("Cliente cadastrado!");
+      document.getElementById("clienteForm").reset();
+      carregarClientes();
+      listarClientesProjetos();
+    }
+  });
+
+  // Cadastro de Projeto
+  document.getElementById("projetoForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const cliente_id = document.getElementById("projetoCliente").value;
+    const titulo = document.getElementById("projetoTitulo").value;
+    const descricao = document.getElementById("projetoDescricao").value;
+
+    const { error } = await supabaseClient.from("projetos").insert([{ cliente_id, titulo, descricao }]);
+    if (error) alert("Erro: " + error.message);
+    else {
+      alert("Projeto cadastrado!");
+      document.getElementById("projetoForm").reset();
+      listarClientesProjetos();
+    }
+  });
+
+  // Inicialização
+  carregarUsuarios();
+  carregarClientes();
+  listarClientesProjetos();
+</script>
 
 </body>
 </html>
