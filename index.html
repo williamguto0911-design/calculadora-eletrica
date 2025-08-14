@@ -197,8 +197,9 @@
 <script>
     // --- CONFIGURAÇÃO E CLIENTE SUPABASE ---
     const SUPABASE_URL = 'https://ahuvldyeownupkgjqusl.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodXZsZHllb3dudXBrZ2pxdXNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyMDc3MDUsImV4cCI6MjA3MDc4MzcwNX0.pkDt_ziDZzh2QNSN0FCDMA4PUbrgdvTPtP6-6O5W9k';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodXZsZHllb3dudXBrZ2pxdXNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyMDc3MDUsImV4cCI6MjA3MDc4MzcwNX0.pkDtP_ziDZzh2QNSN0FCDMA4PUbrgdvTPtP6-6O5W9k';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // --- VARIÁVEIS GLOBAIS ---
     let circuitCount = 0;
@@ -264,7 +265,7 @@
         };
 
         // 1. Cria o usuário no Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
         if (authError) {
             alert('Erro ao registrar: ' + authError.message);
             return;
@@ -272,7 +273,7 @@
 
         // 2. Atualiza o perfil do usuário com os dados adicionais
         if (authData.user) {
-            const { error: profileError } = await supabase
+            const { error: profileError } = await supabaseClient
                 .from('profiles')
                 .update({ ...userData, updated_at: new Date() })
                 .eq('id', authData.user.id);
@@ -292,7 +293,7 @@
         const password = document.getElementById('password').value.trim();
         if (!email || !password) return;
 
-        const { data: { user } , error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: { user } , error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
         if (error) {
             alert('Erro no login: ' + error.message);
@@ -301,7 +302,7 @@
 
         if (user) {
             // Verifica se o usuário está aprovado
-            const { data: profile, error: profileError } = await supabase
+            const { data: profile, error: profileError } = await supabaseClient
                 .from('profiles')
                 .select('is_approved')
                 .eq('id', user.id)
@@ -323,7 +324,7 @@
     }
 
     async function handleLogout() {
-        await supabase.auth.signOut();
+        await supabaseClient.auth.signOut();
         currentUserProfile = null;
         document.getElementById('appContainer').style.display = 'none';
         document.getElementById('loginContainer').style.display = 'block';
@@ -335,9 +336,9 @@
         document.getElementById('loginContainer').style.display = 'none';
         document.getElementById('appContainer').style.display = 'block';
 
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) {
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
@@ -375,7 +376,7 @@
         const select = document.getElementById('savedProjectsSelect');
         select.innerHTML = '<option value="">-- Selecione uma obra --</option>';
 
-        let query = supabase.from('projects').select('id, project_name, owner_id, profiles(nome)');
+        let query = supabaseClient.from('projects').select('id, project_name, owner_id, profiles(nome)');
 
         // Se não for admin, a política RLS já filtra. Para admin, não precisa de filtro extra.
         if (searchTerm) {
@@ -435,17 +436,17 @@
 
         if (currentProjectId) {
             // Atualiza projeto existente
-            result = await supabase.from('projects').update(projectData).eq('id', currentProjectId).select().single();
+            result = await supabaseClient.from('projects').update(projectData).eq('id', currentProjectId).select().single();
         } else {
              // Cria um novo código de cliente se necessário
             if (!mainData.codigoCliente) {
-                const { count, error: countError } = await supabase.from('projects').select('*', { count: 'exact', head: true });
+                const { count, error: countError } = await supabaseClient.from('projects').select('*', { count: 'exact', head: true });
                 if (countError) { alert('Erro ao gerar código do cliente'); return; }
                 projectData.main_data.codigoCliente = 'C-' + String(count + 1).padStart(3, '0');
                 document.getElementById('codigoCliente').value = projectData.main_data.codigoCliente;
             }
             // Insere novo projeto
-            result = await supabase.from('projects').insert(projectData).select().single();
+            result = await supabaseClient.from('projects').insert(projectData).select().single();
         }
 
         const { data, error } = result;
@@ -463,7 +464,7 @@
         const projectId = document.getElementById('savedProjectsSelect').value;
         if (!projectId) return;
 
-        const { data: projectData, error } = await supabase
+        const { data: projectData, error } = await supabaseClient
             .from('projects')
             .select('*')
             .eq('id', projectId)
@@ -513,7 +514,7 @@
         }
 
         if (confirm(`Tem certeza que deseja excluir a obra "${projectName}"?`)) {
-            const { error } = await supabase.from('projects').delete().eq('id', projectId);
+            const { error } = await supabaseClient.from('projects').delete().eq('id', projectId);
             if (error) {
                 alert('Erro ao excluir obra: ' + error.message);
             } else {
@@ -531,7 +532,7 @@
 
     // --- FUNÇÕES DE ADMINISTRAÇÃO ---
     async function populateUsersPanel() {
-        const { data: users, error } = await supabase.from('profiles').select('*').order('nome');
+        const { data: users, error } = await supabaseClient.from('profiles').select('*').order('nome');
         if (error) { alert("Erro ao buscar usuários."); return; }
         
         const userList = document.getElementById('adminUserList');
@@ -551,7 +552,7 @@
     }
 
     async function handleApproveUser(userId) {
-        const { error } = await supabase.from('profiles').update({ is_approved: true }).eq('id', userId);
+        const { error } = await supabaseClient.from('profiles').update({ is_approved: true }).eq('id', userId);
         if (error) { alert("Erro ao aprovar usuário."); } else { alert("Usuário aprovado!"); populateUsersPanel(); }
     }
     
@@ -562,13 +563,13 @@
         alert("A remoção de usuários deve ser implementada via Supabase Edge Function por razões de segurança. Esta função está desabilitada na interface.");
         // Exemplo de como seria (se fosse seguro):
         // if (confirm("Tem certeza? Isso removerá o perfil do usuário, mas não o login.")) {
-        //     const { error } = await supabase.from('profiles').delete().eq('id', userId);
+        //     const { error } = await supabaseClient.from('profiles').delete().eq('id', userId);
         //     if (error) { alert("Erro."); } else { alert("Perfil removido."); populateUsersPanel(); }
         // }
     }
 
     async function openEditUserModal(userId) {
-        const { data: userData, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+        const { data: userData, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
         if (error || !userData) { alert("Usuário não encontrado."); return; }
         
         document.getElementById('editUserId').value = userData.id;
@@ -591,7 +592,7 @@
             crea: document.getElementById('editCrea').value,
         };
         
-        const { error } = await supabase.from('profiles').update(updatedData).eq('id', userId);
+        const { error } = await supabaseClient.from('profiles').update(updatedData).eq('id', userId);
         
         if (error) {
             alert("Erro ao atualizar dados: " + error.message);
@@ -603,8 +604,8 @@
     }
 
     async function populateProjectsPanel() {
-        const { data: projects, error: pError } = await supabase.from('projects').select('id, project_name, owner_id, profiles(nome)');
-        const { data: users, error: uError } = await supabase.from('profiles').select('id, nome').eq('is_approved', true);
+        const { data: projects, error: pError } = await supabaseClient.from('projects').select('id, project_name, owner_id, profiles(nome)');
+        const { data: users, error: uError } = await supabaseClient.from('profiles').select('id, nome').eq('is_approved', true);
         if (pError || uError) { alert("Erro ao carregar dados."); return; }
 
         const tableBody = document.getElementById('adminProjectsTableBody');
@@ -625,7 +626,7 @@
 
     async function handleTransferProject(projectId, newOwnerId) {
         if (confirm(`Deseja transferir esta obra?`)) {
-            const { error } = await supabase.from('projects').update({ owner_id: newOwnerId }).eq('id', projectId);
+            const { error } = await supabaseClient.from('projects').update({ owner_id: newOwnerId }).eq('id', projectId);
             if (error) {
                 alert("Erro ao transferir: " + error.message);
             } else {
@@ -690,7 +691,7 @@
         document.getElementById('celular').addEventListener('input', mascaraCelular);
 
         // Verifica a sessão ao carregar a página
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (session) {
                 showApp();
             }
@@ -699,5 +700,3 @@
         atualizarMascaraDocumento();
     });
 </script>
-</body>
-</html>
