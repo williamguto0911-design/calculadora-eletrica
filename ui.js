@@ -1,3 +1,5 @@
+// Arquivo: ui.js
+
 import { ligacoes } from './utils.js';
 
 let circuitCount = 0;
@@ -112,8 +114,9 @@ export function populateProjectList(projects, isAdmin) {
         const option = document.createElement('option');
         option.value = project.id;
         let text = project.project_name;
-        if (isAdmin && project.profiles) {
-            text += ` (${project.profiles.nome})`;
+        // CORREÇÃO APLICADA AQUI TAMBÉM PARA CONSISTÊNCIA
+        if (isAdmin && project.profile) {
+            text += ` (${project.profile.nome})`;
         }
         option.textContent = text;
         select.appendChild(option);
@@ -157,7 +160,7 @@ export function populateUsersPanel(users) {
     users.forEach(user => {
         const li = document.createElement('li');
         let actions = '';
-        if (!user.is_admin) {
+        if(!user.is_admin) {
             if (user.is_approved) {
                 actions = `<button class="edit-user-btn" data-user-id="${user.id}">Editar</button>
                            <button class="remove-user-btn" data-user-id="${user.id}">Remover</button>`;
@@ -186,9 +189,12 @@ export function populateProjectsPanel_Admin(projects, users) {
     projects.forEach(project => {
         const row = document.createElement('tr');
         const userOptions = users.map(user => `<option value="${user.id}" ${user.id === project.owner_id ? 'selected' : ''}>${user.nome}</option>`).join('');
+        
+        // **** A CORREÇÃO ESTÁ NA LINHA ABAIXO ****
+        // Trocamos 'project.profiles?.nome' por 'project.profile?.nome' (singular)
         row.innerHTML = `
             <td>${project.project_name}</td>
-            <td>${project.profiles?.nome || 'Desconhecido'}</td>
+            <td>${project.profile?.nome || 'Desconhecido'}</td>
             <td>
                 <select>${userOptions}</select>
                 <button class="transfer-btn" data-project-id="${project.id}">Transferir</button>
@@ -201,27 +207,4 @@ export function populateProjectsPanel_Admin(projects, users) {
 export function renderReport(results) {
     // Esta função é uma versão simplificada da sua original para este arquivo
     // A lógica completa de formatação do texto pode ser adicionada aqui
-    document.getElementById('report').textContent = JSON.stringify(results, null, 2);
-}
-
-export function generatePdf(results, currentUserProfile) {
-    if (!results) return;
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    // Simplificado - a lógica completa de criação do PDF pode ser inserida aqui
-    doc.text("Relatório de Projeto Elétrico", 10, 10);
-    doc.text(`Gerado por: ${currentUserProfile.nome}`, 10, 20);
-    
-    const head = [['Ckt', 'Nome', 'Pot.(W)', 'Cabo', 'Disjuntor']];
-    const body = results.map(r => [
-        r.dados.id,
-        r.dados.nomeCircuito,
-        r.calculos.potenciaDemandada.toFixed(2),
-        r.calculos.bitolaRecomendadaMm2 + 'mm²',
-        r.calculos.disjuntorRecomendado.nome
-    ]);
-
-    doc.autoTable({ startY: 30, head, body });
-    doc.save(`Relatorio_${results[0].dados.obra || 'Projeto'}.pdf`);
-}
+    document.getElementById('report').textContent = JSON.stringify(
