@@ -1,3 +1,5 @@
+// Arquivo: auth.js
+
 import { supabase } from './supabaseClient.js';
 
 export async function signInUser(email, password) {
@@ -21,24 +23,23 @@ export async function signInUser(email, password) {
     return { user: null, profile: null };
 }
 
+// FUNÇÃO CORRIGIDA
 export async function signUpUser(email, password, details) {
-    const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-    if (authError) {
-        alert('Erro ao registrar: ' + authError.message);
-        return { error: authError };
-    }
-    if (authData.user) {
-        const { error: profileError } = await supabase
-            .from('profiles')
-            .update(details)
-            .eq('id', authData.user.id);
-
-        if (profileError) {
-            alert('Erro ao salvar dados do perfil: ' + profileError.message);
-            return { error: profileError };
+    // Agora, os 'details' (nome, cpf, etc.) são enviados DENTRO da função de cadastro
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: details
         }
+    });
+
+    if (error) {
+        alert('Erro ao registrar: ' + error.message);
     }
-    return { error: null };
+
+    // A etapa de 'update' foi removida pois não é mais necessária.
+    return { error };
 }
 
 export async function signOutUser() {
