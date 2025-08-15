@@ -296,26 +296,47 @@ main(); // Registra os event listeners uma vez quando o script carrega
 
 // Ouve as mudanças no estado de autenticação
 supabase.auth.onAuthStateChange(async (event, session) => {
-    
-    // **A CORREÇÃO ESTÁ AQUI**
-    // Agora ele verifica o EVENTO enviado pelo Supabase, não mais a URL.
+    // Adiciona um log para vermos o que está acontecendo no console do navegador
+    console.log(`Evento de autenticação recebido: ${event}`);
+
+    // Lógica para recuperação de senha (continua a mesma)
     if (event === 'PASSWORD_RECOVERY') {
-        // Este evento dispara quando o usuário clica no link de recuperação de senha.
         ui.showResetPasswordView();
-    } else if (session) {
-        // Este evento dispara no login ou se já existir uma sessão válida.
+        return; // Encerra a execução aqui
+    }
+
+    // Se existe uma sessão (usuário logado ou tentando logar)
+    if (session) {
         const userProfile = await auth.getSession();
+
+        // CASO DE SUCESSO: O perfil foi encontrado e está aprovado
         if (userProfile && userProfile.is_approved) {
             currentUserProfile = userProfile;
             ui.showAppView(currentUserProfile);
-            handleSearch(); // Carrega a lista de projetos do usuário
-        } else {
-            if (currentUserProfile) await auth.signOutUser(); // Garante que saia se não for aprovado
-            currentUserProfile = null;
-            ui.showLoginView();
+            // Só carrega a lista de projetos no login inicial para evitar múltiplas chamadas
+            if (event === 'SIGNED_IN') {
+                handleSearch();
+            }
         }
-    } else {
-        // Este evento dispara no logout ou se não houver sessão.
+        // CASO DE FALHA: O perfil não foi encontrado ou não está aprovado
+        else {
+            // AÇÃO CRÍTICA: Só vamos deslogar o usuário se for a PRIMEIRA TENTATIVA
+            // de login (SIGNED_IN) que falhou.
+            // Isso impede que uma falha de rede aleatória durante a sessão (TOKEN_REFRESHED)
+            // expulse o usuário da aplicação.
+            if (event === 'SIGNED_IN') {
+                console.error("Falha na verificação do perfil no login inicial. Deslogando.");
+                await auth.signOutUser();
+                currentUserProfile = null;
+                ui.showLoginView();
+            } else {
+                // Para outros eventos, apenas registramos o erro sem deslogar
+                console.warn(`Não foi possível verificar o perfil durante o evento '${event}'. Mantendo a sessão atual por segurança.`);
+            }
+        }
+    }
+    // Se NÃO existe sessão (usuário deslogou)
+    else {
         currentUserProfile = null;
         ui.showLoginView();
     }
