@@ -23,9 +23,7 @@ export async function signInUser(email, password) {
     return { user: null, profile: null };
 }
 
-// FUNÇÃO CORRIGIDA
 export async function signUpUser(email, password, details) {
-    // Agora, os 'details' (nome, cpf, etc.) são enviados DENTRO da função de cadastro
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -37,8 +35,6 @@ export async function signUpUser(email, password, details) {
     if (error) {
         alert('Erro ao registrar: ' + error.message);
     }
-
-    // A etapa de 'update' foi removida pois não é mais necessária.
     return { error };
 }
 
@@ -58,4 +54,24 @@ export async function getSession() {
         .single();
     
     return profile;
+}
+
+// --- NOVAS FUNÇÕES ---
+
+/**
+ * Envia o e-mail de redefinição de senha para o usuário.
+ */
+export async function sendPasswordResetEmail(email) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://williamguto0911-design.github.io/calculadora-eletrica/',
+    });
+    return { error };
+}
+
+/**
+ * Atualiza a senha do usuário logado (autenticado pelo link de redefinição).
+ */
+export async function updatePassword(newPassword) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return { error };
 }

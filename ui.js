@@ -8,15 +8,24 @@ let circuitCount = 0;
 export function showLoginView() {
     document.getElementById('loginContainer').style.display = 'block';
     document.getElementById('appContainer').style.display = 'none';
+    document.getElementById('resetPasswordContainer').style.display = 'none';
 }
 
 export function showAppView(userProfile) {
     document.getElementById('loginContainer').style.display = 'none';
     document.getElementById('appContainer').style.display = 'block';
+    document.getElementById('resetPasswordContainer').style.display = 'none';
     
     const isAdmin = userProfile?.is_admin || false;
     document.getElementById('adminPanelBtn').style.display = isAdmin ? 'block' : 'none';
     document.getElementById('manageProjectsBtn').style.display = isAdmin ? 'block' : 'none';
+}
+
+// NOVA FUNÇÃO
+export function showResetPasswordView() {
+    document.getElementById('loginContainer').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'none';
+    document.getElementById('resetPasswordContainer').style.display = 'block';
 }
 
 export function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
@@ -48,6 +57,7 @@ export function removeCircuit(id) {
     renumberCircuits();
 }
 
+// FUNÇÃO COM PEQUENA CORREÇÃO INTERNA
 function renumberCircuits() {
     const circuitBlocks = document.querySelectorAll('.circuit-block');
     circuitCount = circuitBlocks.length;
@@ -58,12 +68,16 @@ function renumberCircuits() {
         block.dataset.id = newId;
         block.id = `circuit-${newId}`;
         block.querySelectorAll('[id],[for],[data-circuit-id]').forEach(el => {
-            const props=['id','htmlFor','data-circuit-id'];
+            const props=['id','htmlFor'];
             props.forEach(prop=>{
                 if(el[prop] && String(el[prop]).includes(`-${oldId}`)){
                     el[prop] = el[prop].replace(`-${oldId}`,`-${newId}`)
                 }
-            })
+            });
+            // Trata o data-attribute separadamente
+            if (el.dataset.circuitId && el.dataset.circuitId.includes(`-${oldId}`)) {
+                el.dataset.circuitId = el.dataset.circuitId.replace(`-${oldId}`, `-${newId}`);
+            }
         });
         block.querySelector('h2').textContent = `Circuito ${newId}`;
     });

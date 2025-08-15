@@ -1,25 +1,18 @@
+// Arquivo: main.js
+
 import * as auth from './auth.js';
 import * as ui from './ui.js';
 import * as api from './api.js';
 import * as utils from './utils.js';
+import { supabase } from './supabaseClient.js'; // Importamos o supabase aqui
 
 // --- ESTADO DA APLICAÇÃO ---
 let currentUserProfile = null;
 
 // --- INICIALIZAÇÃO E VERIFICAÇÃO DE SESSÃO ---
-async function main() {
+function main() {
     setupEventListeners();
     utils.atualizarMascaraDocumento();
-
-    currentUserProfile = await auth.getSession();
-    if (currentUserProfile && currentUserProfile.is_approved) {
-        ui.showAppView(currentUserProfile);
-        const projects = await api.fetchProjects();
-        ui.populateProjectList(projects, currentUserProfile.is_admin);
-        ui.resetForm(true);
-    } else {
-        ui.showLoginView();
-    }
 }
 
 // --- CONFIGURAÇÃO DOS EVENTOS ---
@@ -29,6 +22,14 @@ function setupEventListeners() {
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
     document.getElementById('registerBtn').addEventListener('click', () => ui.openModal('registerModalOverlay'));
     document.getElementById('registerForm').addEventListener('submit', handleRegister);
+
+    // Redefinição de Senha
+    document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        ui.openModal('forgotPasswordModalOverlay');
+    });
+    document.getElementById('forgotPasswordForm').addEventListener('submit', handleForgotPassword);
+    document.getElementById('resetPasswordForm').addEventListener('submit', handleResetPassword);
 
     // Modais
     document.querySelectorAll('.close-modal-btn').forEach(btn => {
@@ -77,26 +78,12 @@ function setupEventListeners() {
 async function handleLogin() {
     const email = document.getElementById('emailLogin').value;
     const password = document.getElementById('password').value;
-    const { user, profile } = await auth.signInUser(email, password);
-
-    if (profile) {
-        if (profile.is_approved) {
-            currentUserProfile = profile;
-            ui.showAppView(currentUserProfile);
-            const projects = await api.fetchProjects();
-            ui.populateProjectList(projects, currentUserProfile.is_admin);
-            ui.resetForm(true);
-        } else {
-            alert('Seu acesso ainda não foi aprovado por um administrador.');
-            await auth.signOutUser();
-        }
-    }
+    // A lógica de login agora é gerenciada pelo onAuthStateChange, então aqui só tentamos o login.
+    await auth.signInUser(email, password);
 }
 
 async function handleLogout() {
     await auth.signOutUser();
-    currentUserProfile = null;
-    ui.showLoginView();
 }
 
 async function handleRegister(event) {
@@ -118,19 +105,44 @@ async function handleRegister(event) {
     }
 }
 
+async function handleForgotPassword(event) {
+    event.preventDefault();
+    const email = document.getElementById('forgotEmail').value;
+    const { error } = await auth.sendPasswordResetEmail(email);
+    if (error) {
+        alert("Erro ao enviar e-mail: " + error.message);
+    } else {
+        alert("Se o e-mail estiver cadastrado, um link de redefinição foi enviado!");
+        ui.closeModal('forgotPasswordModalOverlay');
+        event.target.reset();
+    }
+}
+
+async function handleResetPassword(event) {
+    event.preventDefault();
+    const newPassword = document.getElementById('newPassword').value;
+    const { error } = await auth.updatePassword(newPassword);
+
+    if (error) {
+        alert("Erro ao atualizar senha: " + error.message);
+    } else {
+        alert("Senha atualizada com sucesso! Por favor, faça o login com sua nova senha.");
+        window.location.hash = ''; // Limpa o hash da URL
+        ui.showLoginView();
+        document.getElementById('resetPasswordContainer').style.display = 'none';
+    }
+}
+
 async function handleSaveProject() {
     const projectName = document.getElementById('obra').value.trim();
     if (!projectName) {
         alert("Por favor, insira um 'Nome da Obra' para salvar.");
         return;
     }
-
     const mainData = {};
     document.querySelectorAll('#main-form input, #main-form select').forEach(el => mainData[el.id] = el.value);
-    
     const techData = {};
     document.querySelectorAll('#tech-form input').forEach(el => techData[el.id] = el.value);
-    
     const circuitsData = [];
     document.querySelectorAll('.circuit-block').forEach(block => {
         const circuit = { id: block.dataset.id };
@@ -139,7 +151,6 @@ async function handleSaveProject() {
         });
         circuitsData.push(circuit);
     });
-    
     const projectData = {
         project_name: projectName,
         main_data: mainData,
@@ -147,17 +158,14 @@ async function handleSaveProject() {
         circuits_data: circuitsData,
         owner_id: currentUserProfile.id
     };
-    
     const currentProjectId = document.getElementById('currentProjectId').value;
-    
     try {
         const { data, error } = await api.saveProject(projectData, currentProjectId);
         if (error) throw error;
-
         alert(`Obra "${projectName}" salva com sucesso!`);
         document.getElementById('currentProjectId').value = data.id;
-        document.getElementById('codigoCliente').value = data.main_data.codigoCliente; // Atualiza o código do cliente
-        await handleSearch(); // Recarrega a lista
+        document.getElementById('codigoCliente').value = data.main_data.codigoCliente;
+        await handleSearch();
     } catch (error) {
         alert('Erro ao salvar obra: ' + error.message);
     }
@@ -177,7 +185,6 @@ async function handleDeleteProject() {
     const projectId = document.getElementById('savedProjectsSelect').value;
     const projectName = document.getElementById('savedProjectsSelect').options[document.getElementById('savedProjectsSelect').selectedIndex].text;
     if (!projectId || !confirm(`Tem certeza que deseja excluir a obra "${projectName}"?`)) return;
-    
     const { error } = await api.deleteProject(projectId);
     if (error) {
         alert('Erro ao excluir obra: ' + error.message);
@@ -202,7 +209,7 @@ async function handleSearch(term = '') {
 function handleCalculate() {
     const results = utils.calcularTodosCircuitos();
     if (results) {
-        ui.renderReport(results); // Usar a função de UI para exibir
+        ui.renderReport(results);
     }
 }
 
@@ -213,7 +220,6 @@ function handleGeneratePdf() {
     }
 }
 
-// Handlers do Admin
 async function showAdminPanel() {
     const users = await api.fetchAllUsers();
     ui.populateUsersPanel(users);
@@ -230,10 +236,9 @@ async function showManageProjectsPanel() {
 async function handleAdminUserActions(event) {
     const target = event.target;
     const userId = target.dataset.userId;
-
     if (target.classList.contains('approve-user-btn')) {
         await api.approveUser(userId);
-        showAdminPanel(); // Refresh
+        showAdminPanel();
     }
     if (target.classList.contains('edit-user-btn')) {
         const users = await api.fetchAllUsers();
@@ -260,7 +265,7 @@ async function handleUpdateUser(event) {
     } else {
         alert("Usuário atualizado com sucesso!");
         ui.closeModal('editUserModalOverlay');
-        showAdminPanel(); // Refresh
+        showAdminPanel();
     }
 }
 
@@ -274,10 +279,35 @@ async function handleAdminProjectActions(event) {
             alert("Erro ao transferir obra: " + error.message);
         } else {
             alert("Obra transferida!");
-            showManageProjectsPanel(); // Refresh
+            showManageProjectsPanel();
         }
     }
 }
 
 // --- PONTO DE ENTRADA ---
-main();
+// Ouve as mudanças no estado de autenticação (Login, Logout, Recuperação de Senha)
+supabase.auth.onAuthStateChange(async (event, session) => {
+    // Esconde todas as telas para começar do zero
+    document.getElementById('loginContainer').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'none';
+    document.getElementById('resetPasswordContainer').style.display = 'none';
+
+    if (event === 'PASSWORD_RECOVERY') {
+        ui.showResetPasswordView();
+    } else if (session) { // Se existe uma sessão (usuário logado)
+        currentUserProfile = await auth.getSession();
+        if (currentUserProfile && currentUserProfile.is_approved) {
+            ui.showAppView(currentUserProfile);
+            const projects = await api.fetchProjects();
+            ui.populateProjectList(projects, currentUserProfile.is_admin);
+            ui.resetForm(true);
+        } else {
+            // Se o usuário está logado mas não aprovado (ou perfil não encontrado), desloga
+            await auth.signOutUser();
+        }
+    } else { // Se não há sessão (usuário deslogado)
+        ui.showLoginView();
+    }
+});
+
+main(); // Roda a função main para registrar todos os event listeners dos botões
