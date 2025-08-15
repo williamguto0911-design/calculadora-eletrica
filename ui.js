@@ -21,7 +21,6 @@ export function showAppView(userProfile) {
     document.getElementById('manageProjectsBtn').style.display = isAdmin ? 'block' : 'none';
 }
 
-// NOVA FUNÇÃO
 export function showResetPasswordView() {
     document.getElementById('loginContainer').style.display = 'none';
     document.getElementById('appContainer').style.display = 'none';
@@ -57,7 +56,6 @@ export function removeCircuit(id) {
     renumberCircuits();
 }
 
-// FUNÇÃO COM PEQUENA CORREÇÃO INTERNA
 function renumberCircuits() {
     const circuitBlocks = document.querySelectorAll('.circuit-block');
     circuitCount = circuitBlocks.length;
@@ -74,7 +72,6 @@ function renumberCircuits() {
                     el[prop] = el[prop].replace(`-${oldId}`,`-${newId}`)
                 }
             });
-            // Trata o data-attribute separadamente
             if (el.dataset.circuitId && el.dataset.circuitId.includes(`-${oldId}`)) {
                 el.dataset.circuitId = el.dataset.circuitId.replace(`-${oldId}`, `-${newId}`);
             }
@@ -83,6 +80,8 @@ function renumberCircuits() {
     });
 }
 
+// ... O restante do arquivo (getCircuitHTML, populate, etc.) continua o mesmo que você me enviou ...
+// Abaixo está o restante do seu arquivo ui.js para garantir que esteja completo
 function initializeCircuitListeners(id) {
     const tipoCircuito = document.getElementById(`tipoCircuito-${id}`);
     const fases = document.getElementById(`fases-${id}`);

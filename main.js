@@ -4,12 +4,13 @@ import * as auth from './auth.js';
 import * as ui from './ui.js';
 import * as api from './api.js';
 import * as utils from './utils.js';
-import { supabase } from './supabaseClient.js'; // Importamos o supabase aqui
+import { supabase } from './supabaseClient.js';
 
 // --- ESTADO DA APLICAÇÃO ---
 let currentUserProfile = null;
 
-// --- INICIALIZAÇÃO E VERIFICAÇÃO DE SESSÃO ---
+// --- FUNÇÃO DE INICIALIZAÇÃO ---
+// Agora, 'main' apenas registra os listeners dos botões. A lógica de sessão foi movida.
 function main() {
     setupEventListeners();
     utils.atualizarMascaraDocumento();
@@ -78,7 +79,6 @@ function setupEventListeners() {
 async function handleLogin() {
     const email = document.getElementById('emailLogin').value;
     const password = document.getElementById('password').value;
-    // A lógica de login agora é gerenciada pelo onAuthStateChange, então aqui só tentamos o login.
     await auth.signInUser(email, password);
 }
 
@@ -121,15 +121,18 @@ async function handleForgotPassword(event) {
 async function handleResetPassword(event) {
     event.preventDefault();
     const newPassword = document.getElementById('newPassword').value;
+    if (!newPassword || newPassword.length < 6) {
+        alert("A senha precisa ter no mínimo 6 caracteres.");
+        return;
+    }
     const { error } = await auth.updatePassword(newPassword);
 
     if (error) {
         alert("Erro ao atualizar senha: " + error.message);
     } else {
-        alert("Senha atualizada com sucesso! Por favor, faça o login com sua nova senha.");
-        window.location.hash = ''; // Limpa o hash da URL
-        ui.showLoginView();
-        document.getElementById('resetPasswordContainer').style.display = 'none';
+        alert("Senha atualizada com sucesso! A página será recarregada. Por favor, faça o login com sua nova senha.");
+        window.location.hash = ''; // Limpa os tokens da URL
+        window.location.reload(); // Recarrega a página para o estado de login
     }
 }
 
@@ -202,6 +205,7 @@ function handleNewProject() {
 }
 
 async function handleSearch(term = '') {
+    if (!currentUserProfile) return;
     const projects = await api.fetchProjects(term);
     ui.populateProjectList(projects, currentUserProfile.is_admin);
 }
@@ -284,30 +288,27 @@ async function handleAdminProjectActions(event) {
     }
 }
 
-// --- PONTO DE ENTRADA ---
+// --- PONTO DE ENTRADA E GERENCIADOR DE ESTADO ---
+main(); // Registra os event listeners uma vez quando o script carrega
+
 // Ouve as mudanças no estado de autenticação (Login, Logout, Recuperação de Senha)
 supabase.auth.onAuthStateChange(async (event, session) => {
-    // Esconde todas as telas para começar do zero
-    document.getElementById('loginContainer').style.display = 'none';
-    document.getElementById('appContainer').style.display = 'none';
-    document.getElementById('resetPasswordContainer').style.display = 'none';
-
-    if (event === 'PASSWORD_RECOVERY') {
+    
+    // Se o usuário veio de um link de recuperação, a URL terá um hash
+    if (window.location.hash.includes('type=recovery')) {
         ui.showResetPasswordView();
-    } else if (session) { // Se existe uma sessão (usuário logado)
-        currentUserProfile = await auth.getSession();
-        if (currentUserProfile && currentUserProfile.is_approved) {
-            ui.showAppView(currentUserProfile);
-            const projects = await api.fetchProjects();
-            ui.populateProjectList(projects, currentUserProfile.is_admin);
-            ui.resetForm(true);
-        } else {
-            // Se o usuário está logado mas não aprovado (ou perfil não encontrado), desloga
-            await auth.signOutUser();
-        }
-    } else { // Se não há sessão (usuário deslogado)
+        return;
+    }
+
+    // Lógica padrão de sessão
+    const userProfile = await auth.getSession();
+    if (userProfile && userProfile.is_approved) {
+        currentUserProfile = userProfile;
+        ui.showAppView(currentUserProfile);
+        handleSearch(); // Carrega a lista de projetos do usuário
+        ui.resetForm(true);
+    } else {
+        currentUserProfile = null;
         ui.showLoginView();
     }
 });
-
-main(); // Roda a função main para registrar todos os event listeners dos botões
