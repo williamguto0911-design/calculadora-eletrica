@@ -10,7 +10,6 @@ import { supabase } from './supabaseClient.js';
 let currentUserProfile = null;
 
 // --- FUNÇÃO DE INICIALIZAÇÃO ---
-// Agora, 'main' apenas registra os listeners dos botões. A lógica de sessão foi movida.
 function main() {
     setupEventListeners();
     utils.atualizarMascaraDocumento();
@@ -137,6 +136,10 @@ async function handleResetPassword(event) {
 }
 
 async function handleSaveProject() {
+    if (!currentUserProfile) {
+        alert("Você precisa estar logado para salvar um projeto.");
+        return;
+    }
     const projectName = document.getElementById('obra').value.trim();
     if (!projectName) {
         alert("Por favor, insira um 'Nome da Obra' para salvar.");
@@ -291,23 +294,28 @@ async function handleAdminProjectActions(event) {
 // --- PONTO DE ENTRADA E GERENCIADOR DE ESTADO ---
 main(); // Registra os event listeners uma vez quando o script carrega
 
-// Ouve as mudanças no estado de autenticação (Login, Logout, Recuperação de Senha)
+// Ouve as mudanças no estado de autenticação
 supabase.auth.onAuthStateChange(async (event, session) => {
     
-    // Se o usuário veio de um link de recuperação, a URL terá um hash
-    if (window.location.hash.includes('type=recovery')) {
+    // **A CORREÇÃO ESTÁ AQUI**
+    // Agora ele verifica o EVENTO enviado pelo Supabase, não mais a URL.
+    if (event === 'PASSWORD_RECOVERY') {
+        // Este evento dispara quando o usuário clica no link de recuperação de senha.
         ui.showResetPasswordView();
-        return;
-    }
-
-    // Lógica padrão de sessão
-    const userProfile = await auth.getSession();
-    if (userProfile && userProfile.is_approved) {
-        currentUserProfile = userProfile;
-        ui.showAppView(currentUserProfile);
-        handleSearch(); // Carrega a lista de projetos do usuário
-        ui.resetForm(true);
+    } else if (session) {
+        // Este evento dispara no login ou se já existir uma sessão válida.
+        const userProfile = await auth.getSession();
+        if (userProfile && userProfile.is_approved) {
+            currentUserProfile = userProfile;
+            ui.showAppView(currentUserProfile);
+            handleSearch(); // Carrega a lista de projetos do usuário
+        } else {
+            if (currentUserProfile) await auth.signOutUser(); // Garante que saia se não for aprovado
+            currentUserProfile = null;
+            ui.showLoginView();
+        }
     } else {
+        // Este evento dispara no logout ou se não houver sessão.
         currentUserProfile = null;
         ui.showLoginView();
     }
