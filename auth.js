@@ -56,16 +56,14 @@ export async function getSession() {
     return profile;
 }
 
-// --- FUNÇÕES DE REDEFINIÇÃO DE SENHA ---
+// --- NOVAS FUNÇÕES ---
 
 /**
  * Envia o e-mail de redefinição de senha para o usuário.
  */
 export async function sendPasswordResetEmail(email) {
-    // **** A CORREÇÃO ESTÁ NA LINHA ABAIXO ****
-    // Adicionamos 'index.html' no final da URL para sermos explícitos
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://williamguto0911-design.github.io/calculadora-eletrica/index.html',
+        redirectTo: 'https://williamguto0911-design.github.io/calculadora-eletrica/',
     });
     return { error };
 }
