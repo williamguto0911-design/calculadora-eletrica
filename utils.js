@@ -40,7 +40,7 @@ function _calcularCircuitosIndividuais(technicalData, clientProfile) {
         const dados = { /* ... coleta de dados do circuito ... */ };
         
         if (dados.tipoCircuito === 'aquecimento' && dados.fatorDemanda > 1) {
-            alert(`Erro no Circuito ${id}: Fator de demanda para aquecimento não pode ser maior que 1.`);
+            alert(`Erro no Circuito ${id}: Fator de demanda para aquecimento não pode ser > 1.`);
             return null;
         }
         
@@ -70,7 +70,10 @@ function _calcularAlimentadorGeral(technicalData, potenciaTotal) {
         metodoInstalacao: document.getElementById('feederMetodoInstalacao').value,
         tipoDisjuntor: document.getElementById('feederTipoDisjuntor').value,
         temperaturaAmbienteC: 30, // Assumindo valor padrão
+        dpsClasse: document.getElementById('feederDpsClasse').value,
+        dpsIka: document.getElementById('feederDpsIka').value,
     };
+    dados.dpsInfo = findDps(technicalData.dps, dados.dpsClasse, dados.dpsIka);
     const calculos = performCalculation(dados, technicalData);
     return { dados, calculos };
 }
